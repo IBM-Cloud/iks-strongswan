@@ -1,0 +1,26 @@
+# To get started with Dependabot version updates, you'll need to specify which
+# package ecosystems to update and where the package manifests are located.
+# Please see the documentation for all configuration options:
+# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/" # location of your .github/workflows directory
+    schedule:
+      interval: "cron"
+      cronjob: "01 11 * * *" # Run at 11:01 UTC daily
+    open-pull-requests-limit: 99
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  - package-ecosystem: "gomod" # Specifies the Go modules package ecosystem
+    directory: "/" # Location of your go.mod file
+    schedule:
+      interval: "cron"
+      cronjob: "02 11 * * *" # Run at 11:02 UTC daily
+    labels:
+      - "dependencies"
+      - "go"
+
