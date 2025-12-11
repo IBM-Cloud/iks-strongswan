@@ -12,4 +12,4 @@ The strongSwan IPSec VPN service consists of a Kubernetes Load Balancer service,
 
 You can setup the strongSwan IPSec VPN Service using a Helm chart that allows you to configure and deploy the strongSwan IPSec VPN service inside of a Kubernetes pod.
 
-Because strongSwan is integrated within your cluster, you don't need an external gateway device. When VPN connectivity is established, routes are automatically configured on all of the worker nodes in the cluster. These routes allow two-way connectivity through the VPN tunnel between pods on any worker node and the remote system. For example, the following diagram shows how an app in IBM Cloud Kubernetes Service can communicate with an on-premises server via a strongSwan VPN connection:
+Because strongSwan is integrated within your cluster, you don't need an external gateway device. When VPN connectivity is established, routes are automatically configured on all of the worker nodes in the cluster. These routes allow two-way connectivity through the VPN tunnel between pods on any worker node and the remote system.
