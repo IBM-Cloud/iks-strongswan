@@ -1,0 +1,103 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-{{ .Chart.Name }}-config
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+data:
+  ipsec.conf: |
+    {{- if .Values.overRideIpsecConf }}
+{{ indent 4 .Values.overRideIpsecConf }}
+    {{- else }}
+    # ipsec.conf - strongSwan IPsec configuration file
+    # Reference: https://wiki.strongswan.org/projects/strongswan/wiki/IpsecConf
+
+    config setup
+        uniqueids=yes
+
+    conn  %default
+        ikelifetime={{ .Values.ipsec.ikelifetime }}
+        lifetime={{ .Values.ipsec.lifetime }}
+        margintime={{ .Values.ipsec.margintime }}
+        keyingtries={{ .Values.ipsec.keyingtries }}
+        keyexchange={{ .Values.ipsec.keyexchange }}
+        authby=psk
+        mobike=no
+        closeaction={{ template "strongswan.closeaction" . }}
+        dpdaction={{ .Values.ipsec.dpdaction }}
+        {{- if .Values.ipsec.esp }}
+        esp={{ .Values.ipsec.esp | replace "\n" "," | replace " " "" }}
+        {{- end }}
+        {{- if .Values.ipsec.ike }}
+        ike={{ .Values.ipsec.ike | replace "\n" "," | replace " " "" }}
+        {{- end }}
+        type=tunnel
+        forceencaps=yes
+        {{- if .Values.ipsec.additionalOptions }}
+{{ indent 8 .Values.ipsec.additionalOptions }}
+        {{- end }}
+{{- if and (eq .Values.ipsec.auto "add") (and .Values.zoneLoadBalancer (eq .Values.local.id "%loadBalancerIP")) }}
+        auto={{ .Values.ipsec.auto }}
+        left=%any
+        leftsubnet={{ .Values.local.subnet | replace "\n" "," | replace " " "" }}
+        leftallowany=yes
+        right={{ .Values.remote.gateway }}
+        rightsubnet={{ .Values.remote.subnet | replace "\n" "," | replace " " "" }}
+        rightid={{ .Values.remote.id }}
+        rightallowany=yes
+{{- range (.Values.zoneLoadBalancer | replace "\n" "," | replace " " "" | splitList ",") }}
+
+    conn k8s-conn-{{ splitList "=" . | first }}
+        leftid={{ splitList "=" . | last }}
+{{- end }}
+{{- else }}
+
+    conn k8s-conn
+        auto={{ .Values.ipsec.auto }}
+        left=%any
+        leftsubnet={{ .Values.local.subnet | replace "\n" "," | replace " " "" }}
+        leftallowany=yes
+        leftid={{ .Values.local.id }}
+        right={{ .Values.remote.gateway }}
+        rightsubnet={{ .Values.remote.subnet | replace "\n" "," | replace " " "" }}
+        rightid={{ .Values.remote.id }}
+        rightallowany=yes
+{{- end }}
+    {{- end }}
+
+  ipsec.secrets: |
+    {{- if .Values.overRideIpsecSecrets }}
+{{ indent 4 .Values.overRideIpsecSecrets }}
+    {{- else }}
+    # ipsec.secrets - strongSwan IPsec secrets file
+    # Reference: https://wiki.strongswan.org/projects/strongswan/wiki/IpsecSecrets
+
+    : PSK {{ .Values.preshared.secret | quote }}
+    {{- end }}
+
+  charon-logging.conf: |
+    # charon-logging.conf - strongSwan charon logger configuration
+    # Reference: https://wiki.strongswan.org/projects/strongswan/wiki/LoggerConfiguration
+    charon {
+        filelog {
+            stderr {
+{{ indent 16 .Values.strongswanLogging }}
+            }
+        }
+    }
+
+  monitoring.conf: |
+    # monitoring.conf - strongSwan monitoring config settings
+    clusterName: {{ .Values.monitoring.clusterName | quote }}
+    privateIPs: {{ .Values.monitoring.privateIPs | quote }}
+    httpEndpoints: {{ .Values.monitoring.httpEndpoints | quote }}
+    timeout: {{ .Values.monitoring.timeout }}
+    delay: {{ .Values.monitoring.delay }}
+    slackWebhook: {{ .Values.monitoring.slackWebhook | quote }}
+    slackChannel: {{ .Values.monitoring.slackChannel | quote }}
+    slackUsername: {{ .Values.monitoring.slackUsername | quote }}
+    slackIcon: {{ .Values.monitoring.slackIcon | quote }}

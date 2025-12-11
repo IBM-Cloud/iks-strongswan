@@ -1,0 +1,39 @@
+{{- if .Capabilities.APIVersions.Has "crd.projectcalico.org/v1" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ template "strongswan.fullname" . }}-pre-delete
+  namespace: {{ template "strongswan.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-delete
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  template:
+    metadata:
+      name: {{ template "strongswan.fullname" . }}-pre-delete
+      namespace: {{ template "strongswan.namespace" . }}
+    spec:
+      containers:
+      - name: {{ template "strongswan.fullname" . }}-pre-delete
+        image: alpine:3.22
+        command: ["sh", "-c"]
+        args:
+        - >
+          echo "-------------------------------------------------------";
+          echo "  Ensure deployment is deleted before clusterrole";
+          echo "-------------------------------------------------------";
+          echo "-- Add curl to the image --";
+          apk update && apk add curl;
+          cd /usr/local/bin;
+          echo "-- Add kubectl to the image -- {{ template "strongswan.kubeVersion" . }}";
+          curl -LO https://dl.k8s.io/release/{{ template "strongswan.kubeVersion" . }}/bin/linux/amd64/kubectl;
+          chmod +x kubectl;
+          echo "-- Delete the strongSwan deployment --";
+          kubectl delete deployment -n {{ template "strongswan.namespace" . }} {{ template "strongswan.fullname" . }} ;
+          sleep 5;
+          echo "-- Done"
+      restartPolicy: Never
+{{- if .Values.enableRBAC }}
+      serviceAccountName: {{ template "strongswan.fullname" . }}
+{{- end }}
+{{- end -}}

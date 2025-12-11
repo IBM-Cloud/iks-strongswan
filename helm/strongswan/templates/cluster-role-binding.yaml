@@ -1,0 +1,19 @@
+{{- if .Values.enableRBAC -}}
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "strongswan.fullname" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "strongswan.fullname" . }}
+subjects:
+- kind: ServiceAccount
+  name: {{ template "strongswan.fullname" . }}
+  namespace: {{ template "strongswan.namespace" . }}
+{{- end -}}

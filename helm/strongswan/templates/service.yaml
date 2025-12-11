@@ -1,0 +1,36 @@
+{{- if not .Values.zoneLoadBalancer -}}
+apiVersion: v1
+kind: Service
+metadata:
+{{- if .Values.zoneSelector }}
+  annotations:
+    service.kubernetes.io/ibm-load-balancer-cloud-provider-zone: {{ .Values.zoneSelector }}
+{{- end }}
+  name: {{ template "strongswan.fullname" . }}
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: LoadBalancer
+{{- if .Values.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.loadBalancerIP }}
+{{- end }}
+{{- if .Values.enableServiceSourceIP }}
+  externalTrafficPolicy: "Local"
+{{- end }}
+  ports:
+    - port: 500
+      targetPort: 500
+      protocol: UDP
+      name: ike
+    - port: 4500
+      targetPort: 4500
+      protocol: UDP
+      name: ike-nat
+  selector:
+    app: {{ template "strongswan.name" . }}
+    release: {{ .Release.Name }}
+{{- end -}}

@@ -1,0 +1,45 @@
+{{- if or (eq .Values.helmTestsToRun "ALL") (contains "check-config" .Values.helmTestsToRun) -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "strongswan.fullname" . }}-check-config
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}-test
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+  - name: {{ template "strongswan.fullname" . }}-check-config
+    image: {{ template "strongswan.image" . }}
+    env:
+      - name: DISABLE_ROUTING
+        value: "true"
+      - name: DISABLE_VPN
+        value: "true"
+      - name: NAMESPACE
+        value: {{ template "strongswan.namespace" . }}
+      - name: PRIVATE_IP_TO_PING
+        value: {{ .Values.remote.privateIPtoPing }}
+      - name: RELEASE_NAME
+        value: {{ .Release.Name }}
+      - name: VALIDATE_CONFIG
+        value: {{ .Values.validate }}
+{{- if .Values.remoteSubnetNAT }}
+      - name: REMOTE_SUBNET_NAT
+        value: {{ .Values.remoteSubnetNAT | replace "\n" "," | quote }}
+{{- end }}
+    volumeMounts:
+      - name: strongswan-config
+        mountPath: /etc/ipsec.config/
+  restartPolicy: Never
+  volumes:
+    - name: strongswan-config
+      configMap:
+        defaultMode: 420
+        name: {{ .Release.Name }}-{{ .Chart.Name }}-config
+{{- end -}}

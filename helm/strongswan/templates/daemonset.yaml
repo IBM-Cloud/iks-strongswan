@@ -1,0 +1,119 @@
+# strongSwan route daemonset
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ template "strongswan.fullname" . }}-routes
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}-routes
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "strongswan.name" . }}-routes
+      release: {{ .Release.Name }}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: {{ template "strongswan.name" . }}-routes
+        release: {{ .Release.Name }}
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap-routes.yaml") . | sha256sum }}
+        productID: strongSwan_5.9.14
+        productName: strongSwan
+        productVersion: 5.9.14
+    spec:
+{{- if and .Values.zoneSelector .Values.zoneSpecificRoutes }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ibm-cloud.kubernetes.io/zone
+                operator: In
+                values:
+                - {{ .Values.zoneSelector }}
+{{- end }}
+      containers:
+        - name: {{ .Chart.Name }}-routes
+          image: {{ template "strongswan.image" . }}
+          imagePullPolicy: {{ template "strongswan.pullPolicy" . }}
+          resources:
+            requests:
+              cpu: 5m
+              memory: 10Mi
+          readinessProbe:
+            exec:
+              command:
+              - "sh"
+              - "-c"
+              - "[ -f /tmp/calicoEnv.sh ]"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command:
+              - "sh"
+              - "-c"
+              - "[ -f /tmp/calicoEnv.sh ]"
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          securityContext:
+            runAsUser: 2000
+            runAsGroup: 2000
+            capabilities:
+              add:
+              - NET_ADMIN
+              - NET_RAW
+          env:
+{{- if .Values.localNonClusterSubnet }}
+            - name: NON_CLUSTER_SUBNET
+              value: {{ .Values.localNonClusterSubnet | replace "\n" "," | replace " " "" | quote }}
+{{- end }}
+{{- if .Values.localSubnetNAT }}
+            - name: LOCAL_SUBNET_NAT
+              value: {{ .Values.localSubnetNAT | replace "\n" "," | replace " " "" | quote }}
+{{- end }}
+{{- if .Values.remoteSubnetNAT }}
+            - name: REMOTE_SUBNET_NAT
+              value: {{ .Values.remoteSubnetNAT | replace "\n" "," | replace " " "" | quote }}
+{{- end }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: RELEASE_NAME
+              value: {{ .Release.Name }}
+            - name: ROUTE_DAEMON
+              value: "true"
+      hostNetwork: true
+{{- if and (.Capabilities.KubeVersion.Major | hasPrefix "1") (ge (.Capabilities.KubeVersion.Minor | int) 11) }}
+{{- if eq .Release.Namespace "kube-system" }}
+      priorityClassName: system-node-critical
+{{- end }}
+{{- end }}
+      tolerations:
+      - key: dedicated
+        value: edge
+      - key: dedicated
+        value: firewall
+      - key: dedicated
+        value: gateway
+{{- if .Values.tolerations }}
+{{ toYaml .Values.tolerations | indent 6 }}
+{{- end }}
+{{- if .Values.enableRBAC }}
+      serviceAccountName: {{ template "strongswan.fullname" . }}
+{{- end }}

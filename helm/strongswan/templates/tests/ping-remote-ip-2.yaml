@@ -1,0 +1,46 @@
+{{- if or (eq .Values.helmTestsToRun "ALL") (contains "ping-remote-ip-2" .Values.helmTestsToRun) -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "strongswan.fullname" . }}-ping-remote-ip-2
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}-test
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+{{- if and .Values.zoneSelector .Values.zoneSpecificRoutes }}
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+        - matchExpressions:
+          - key: ibm-cloud.kubernetes.io/zone
+            operator: In
+            values:
+            - {{ .Values.zoneSelector }}
+{{- end }}
+  containers:
+  - name: {{ template "strongswan.fullname" . }}-ping-remote-ip-2
+    image: {{ template "strongswan.image" . }}
+    securityContext:
+      capabilities:
+        add:
+        - NET_ADMIN
+        - NET_RAW
+    env:
+      - name: LOCAL_SUBNET
+        value: {{ .Values.local.subnet }}
+      - name: REMOTE_SUBNET
+        value: {{ .Values.remote.subnet }}
+      - name: REMOTE_PRIVATE_IP_TO_PING
+        value: {{ .Values.remote.privateIPtoPing }}
+      - name: RUN_HELM_TEST
+        value: "ping-remote-ip-2"
+  hostNetwork: true
+  restartPolicy: Never
+{{- end -}}

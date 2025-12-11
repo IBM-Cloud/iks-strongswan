@@ -1,0 +1,32 @@
+{{- if or (eq .Values.helmTestsToRun "ALL") (contains "check-state" .Values.helmTestsToRun) -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "strongswan.fullname" . }}-check-state
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}-test
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+  - name: {{ template "strongswan.fullname" . }}-check-state
+    image: {{ template "strongswan.image" . }}
+    env:
+      - name: KUBE_VERSION
+        value: "{{ template "strongswan.kubeVersion" . }}"
+      - name: NAMESPACE
+        value: {{ template "strongswan.namespace" . }}
+      - name: RELEASE_NAME
+        value: {{ .Release.Name }}
+      - name: RUN_HELM_TEST
+        value: "check-state"
+  restartPolicy: Never
+{{- if .Values.enableRBAC }}
+  serviceAccountName: {{ template "strongswan.fullname" . }}
+{{- end }}
+{{- end -}}

@@ -1,0 +1,31 @@
+{{- if or (eq .Values.helmTestsToRun "ALL") (contains "ping-remote-gw" .Values.helmTestsToRun) -}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ template "strongswan.fullname" . }}-ping-remote-gw
+  namespace: {{ template "strongswan.namespace" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}-test
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+  annotations:
+    "helm.sh/hook": test-success
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  containers:
+  - name: {{ template "strongswan.fullname" . }}-ping-remote-gw
+    image: {{ template "strongswan.image" . }}
+    env:
+      - name: IPSEC_AUTO
+        value: {{ .Values.ipsec.auto }}
+      - name: REMOTE_GATEWAY
+        value: {{ .Values.remote.gateway | quote }}
+      - name: RUN_HELM_TEST
+        value: "ping-remote-gw"
+    securityContext:
+      capabilities:
+        add:
+        - NET_RAW
+  restartPolicy: Never
+{{- end -}}

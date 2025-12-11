@@ -1,0 +1,12 @@
+Thank you for installing: {{ .Chart.Name }}.   Your release is named: {{ .Release.Name }}
+
+1. Wait for the {{ .Chart.Name }} pod to go to a "Running" state:
+
+    kubectl get pod -wn {{ template "strongswan.namespace" . }} -l app={{ template "strongswan.name" . }},release={{ .Release.Name }}
+
+2. To check the status of the VPN connection:
+
+    export STRONGSWAN_POD=$(kubectl get pod -n {{ template "strongswan.namespace" . }} -l app={{ template "strongswan.name" . }},release={{ .Release.Name }} -o jsonpath='{ .items[0].metadata.name }')
+
+    kubectl exec -n {{ template "strongswan.namespace" . }}  $STRONGSWAN_POD -- sudo ipsec status
+    kubectl logs -n {{ template "strongswan.namespace" . }}  $STRONGSWAN_POD

@@ -1,0 +1,32 @@
+{{- if .Values.enableRBAC -}}
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ template "strongswan.fullname" . }}
+  labels:
+    app: {{ template "strongswan.name" . }}
+    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "nodes", "pods"]
+  verbs: ["get", "list"]
+{{- if .Capabilities.APIVersions.Has "crd.projectcalico.org/v1" }}
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["delete"]
+- apiGroups: ["extensions"]
+  resources: ["deployments"]
+  verbs: ["delete"]
+- apiGroups: ["crd.projectcalico.org"]
+  resources: ["blockaffinities", "clusterinformations", "felixconfigurations", "ipamblocks", "ippools"]
+  verbs: ["get", "list"]
+- apiGroups: ["crd.projectcalico.org"]
+  resources: ["felixconfigurations"]
+  verbs: ["update"]
+- apiGroups: ["crd.projectcalico.org"]
+  resources: ["ippools"]
+  verbs: ["create", "delete"]
+{{- end }}
+{{- end -}}
