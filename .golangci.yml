@@ -1,0 +1,22 @@
+version: "2"
+linters:
+  enable:
+    - errcheck # on by default
+    - gocritic
+    - gosec
+    - govet # on by default
+    - ineffassign # on by default
+    - misspell
+    - staticcheck # on by default
+    - unconvert
+    - unparam
+    - unused # on by default
+  exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+formatters:
+  enable:
+    - gofmt
