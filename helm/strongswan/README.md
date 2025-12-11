@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD012 MD013 -->
 # strongSwan IPSec VPN service
 
 ![strongSwan IPSec VPN service](https://www.strongswan.org/images/strongswan.png)
