@@ -20,6 +20,10 @@ updates:
     schedule:
       interval: "cron"
       cronjob: "02 11 * * *" # Run at 11:02 UTC daily
+    groups:
+      kubernetes:
+        patterns:
+          - "k8s.io/*"
     labels:
       - "dependencies"
       - "go"
