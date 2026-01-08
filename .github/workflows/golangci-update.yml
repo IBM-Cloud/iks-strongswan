@@ -71,6 +71,6 @@ jobs:
           event-type: pull-request-created
           client-payload: |
             {
-              "pr_branch": "golangci-${{ steps.latest.outputs.version }},
+              "pr_branch": "golangci-${{ steps.latest.outputs.version }}",
               "pr_title": "${{ steps.commit-change.outputs.msg }}"
             }
