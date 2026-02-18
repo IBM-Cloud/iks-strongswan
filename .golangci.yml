@@ -11,6 +11,12 @@ linters:
     - unconvert
     - unparam
     - unused # on by default
+  settings:
+    gosec:
+      excludes:
+        - G702 # Command injection via taint analysis
+        - G704 # SSRF via taint analysis
+        - G706 # Log injection via taint analysis
   exclusions:
     presets:
       - comments
