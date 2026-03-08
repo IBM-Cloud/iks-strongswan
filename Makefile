@@ -25,7 +25,7 @@ CALICOCTL_VERSION?=3.27.5
 CALICOCTL_URL:="https://github.com/projectcalico/calico/releases/download/v${CALICOCTL_VERSION}/calicoctl-linux-amd64"
 
 # golangci_lint
-GOLANGCI_LINT_VERSION := 2.11.1
+GOLANGCI_LINT_VERSION := 2.11.2
 GOLANGCI_LINT_EXISTS := $(shell golangci-lint --version 2>/dev/null)
 
 .PHONY: all
